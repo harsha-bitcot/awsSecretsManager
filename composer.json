@@ -1,0 +1,27 @@
+{
+    "name": "bitcot/aws-secrets-manager",
+    "description": "a package to get values fro",
+    "type": "library",
+    "require": {
+        "illuminate/encryption": "^8.47",
+        "illuminate/cache": "^8.47",
+        "illuminate/filesystem": "^8.47",
+        "symfony/filesystem": "^5.3",
+        "aws/aws-sdk-php": "^3.184",
+        "vlucas/phpdotenv": "^5.3",
+        "illuminate/support": "^8.47",
+        "ext-json": "*"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Bitcot\\AwsSecretsManager\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "harsha",
+            "email": "harsha@bitcot.com"
+        }
+    ]
+}
