@@ -64,13 +64,21 @@ class secrets
     /**
      * @throws Exception
      */
-    public static function isLatest($key, $update = true): bool
+    public static function isLatest($key, $update = true): bool // todo test no key in awsSM retrycount senario
     {
         $secretsManager = new secrets();
         if ($secretsManager->noService()){
             return false;
         }
         $secrets = $secretsManager->fetchSecrets();
+        if (!property_exists($secrets, $key)){
+            $secrets->$key = new stdClass();
+            $secrets->$key->value = '';
+            $secrets->$key->retryCount = 1;
+            $secrets->$key->status = 'failing';
+        }
+        $secretsManager->updateSecrets($secrets);
+//        dd($secrets->$key->value);
         $retryCount = $secrets->$key->retryCount;
         switch (true) {
             /** @noinspection PhpDuplicateSwitchCaseBodyInspection */ case !is_numeric($retryCount):
@@ -92,7 +100,8 @@ class secrets
         }
         $secretsManager->updateSecrets($secrets);
         $aws = $secretsManager->fetchSecretsFromAWS();
-        $result = $aws->$key === $secrets->$key->value;
+        $aws = property_exists($aws, $key) ? $aws->$key : null;
+        $result = $aws === $secrets->$key->value;
         if (!$result && $update)
         {
             Cache::forget($secretsManager->cacheKey);
@@ -104,6 +113,9 @@ class secrets
     public static function markAsWorking($key): bool
     {
         $secretsManager = new secrets();
+        if ($secretsManager->noService()){
+            return false;
+        }
         $secrets = Cache::get($secretsManager->cacheKey);
         if ($secrets->$key->retryCount != 0){
             $secrets->$key->retryCount = 0;
@@ -119,6 +131,9 @@ class secrets
     public static function status(): stdClass
     {
         $secretsManager = new secrets();
+        if ($secretsManager->noService()){
+            return 'service is down';
+        }
         $secrets = $secretsManager->fetchSecrets();
         $activeSecrets = array();
         $failingSecrets = array();
@@ -155,6 +170,9 @@ class secrets
     public static function storedInfo($key = null)
     {
         $secretsManager = new secrets();
+        if ($secretsManager->noService()){
+            return 'service is down';
+        }
         $secrets = $secretsManager->fetchSecrets();
         if ($key != null){
             return property_exists($secrets, $key) ? $secrets->$key : null;
@@ -207,7 +225,7 @@ class secrets
             'region' =>  Env::get('BSM_AWS_REGION', 'us-east-2'),
         ]);
 
-        $secretName = 'test/local';
+        $secretName = Env::get('BSM_SECRET_NAME', 'test/local');
 
         try {
             $result = $client->getSecretValue([
