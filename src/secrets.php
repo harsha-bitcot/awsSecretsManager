@@ -26,47 +26,51 @@ class secrets
     /**
      * @throws Exception
      */
-    public function get($key){
-        if ($this->noService()){
+    public static function get($key){
+        $secretsManager = new secrets();
+        if ($secretsManager->noService()){
             return null;
         }
-        $secrets = $this->fetchSecrets();
+        $secrets = $secretsManager->fetchSecrets();
         return property_exists($secrets, $key) ? $secrets->$key->value : null;
     }
 
     /**
      * @throws Exception
      */
-    public function getAll()
+    public static function getAll()
     {
-        if ($this->noService()){
+        $secretsManager = new secrets();
+        if ($secretsManager->noService()){
             return new stdClass();
         }
-        $secrets = $this->fetchSecrets();
+        $secrets = $secretsManager->fetchSecrets();
         foreach ($secrets as $key=>$value){
             $secrets->$key = $value->value;
         }
         return $secrets;
     }
 
-    public function clearSecrets(): bool
+    public static function clearSecrets(): bool
     {
-        if ($this->noService()){
+        $secretsManager = new secrets();
+        if ($secretsManager->noService()){
             return false;
         }
-        Cache::forget($this->cacheKey);
-        return Cache::get($this->cacheKey) === null;
+        Cache::forget($secretsManager->cacheKey);
+        return Cache::get($secretsManager->cacheKey) === null;
     }
 
     /**
      * @throws Exception
      */
-    public function isLatest($key, $update = true): bool
+    public static function isLatest($key, $update = true): bool
     {
-        if ($this->noService()){
+        $secretsManager = new secrets();
+        if ($secretsManager->noService()){
             return false;
         }
-        $secrets = $this->fetchSecrets();
+        $secrets = $secretsManager->fetchSecrets();
         $retryCount = $secrets->$key->retryCount;
         switch (true) {
             /** @noinspection PhpDuplicateSwitchCaseBodyInspection */ case !is_numeric($retryCount):
@@ -79,41 +83,43 @@ class secrets
                 break;
             case $retryCount > Env::get('BSM_MAX_RETRY_COUNT', 10):
                 $secrets->$key->status = 'failed';
-                $this->updateSecrets($secrets);
+                $secretsManager->updateSecrets($secrets);
                 return true;
             default:
                 $secrets->$key->retryCount = 1;
                 $secrets->$key->status = 'failing';
                 break;
         }
-        $this->updateSecrets($secrets);
-        $aws = $this->fetchSecretsFromAWS();
+        $secretsManager->updateSecrets($secrets);
+        $aws = $secretsManager->fetchSecretsFromAWS();
         $result = $aws->$key === $secrets->$key->value;
         if (!$result && $update)
         {
-            Cache::forget($this->cacheKey);
+            Cache::forget($secretsManager->cacheKey);
         }
         return $result;
     }
 
     /** @noinspection PhpUnused */
-    public function markAsWorking($key): bool
+    public static function markAsWorking($key): bool
     {
-        $secrets = Cache::get($this->cacheKey);
+        $secretsManager = new secrets();
+        $secrets = Cache::get($secretsManager->cacheKey);
         if ($secrets->$key->retryCount != 0){
             $secrets->$key->retryCount = 0;
             $secrets->$key->status = 'active';
         }
-        Cache::put($this->cacheKey, $secrets);
+        Cache::put($secretsManager->cacheKey, $secrets);
         return true;
     }
 
     /**
      * @throws Exception
      */
-    public function status(): stdClass
+    public static function status(): stdClass
     {
-        $secrets = $this->fetchSecrets();
+        $secretsManager = new secrets();
+        $secrets = $secretsManager->fetchSecrets();
         $activeSecrets = array();
         $failingSecrets = array();
         $failedSecrets = array();
@@ -146,14 +152,16 @@ class secrets
     /**
      * @throws Exception
      */
-    public function storedInfo($key = null)
+    public static function storedInfo($key = null)
     {
-        $secrets = $this->fetchSecrets();
+        $secretsManager = new secrets();
+        $secrets = $secretsManager->fetchSecrets();
         if ($key != null){
             return property_exists($secrets, $key) ? $secrets->$key : null;
         }
         return $secrets;
     }
+
 
     /**
      * @throws Exception
