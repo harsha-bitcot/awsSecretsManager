@@ -32,7 +32,7 @@ class secrets
             return null;
         }
         $secrets = $secretsManager->fetchSecrets();
-        return property_exists($secrets, $key) ? $secrets->$key->value : null;
+        return property_exists($secrets, $key) ? $secrets->$key->value : null; // todo set null instead of '' while creating new obj in isLatest and make it return null here
     }
 
     /**
@@ -64,7 +64,7 @@ class secrets
     /**
      * @throws Exception
      */
-    public static function isLatest($key, $update = true): bool // todo test no key in awsSM retrycount senario
+    public static function isLatest($key, $update = true): bool // todo test no key in awsSM retry count scenario
     {
         $secretsManager = new secrets();
         if ($secretsManager->noService()){
@@ -74,11 +74,9 @@ class secrets
         if (!property_exists($secrets, $key)){
             $secrets->$key = new stdClass();
             $secrets->$key->value = '';
-            $secrets->$key->retryCount = 1;
+            $secrets->$key->retryCount = 0;
             $secrets->$key->status = 'failing';
         }
-        $secretsManager->updateSecrets($secrets);
-//        dd($secrets->$key->value);
         $retryCount = $secrets->$key->retryCount;
         switch (true) {
             /** @noinspection PhpDuplicateSwitchCaseBodyInspection */ case !is_numeric($retryCount):
@@ -100,7 +98,7 @@ class secrets
         }
         $secretsManager->updateSecrets($secrets);
         $aws = $secretsManager->fetchSecretsFromAWS();
-        $aws = property_exists($aws, $key) ? $aws->$key : null;
+        $aws = property_exists($aws, $key) ? $aws->$key : $secrets->$key->value;
         $result = $aws === $secrets->$key->value;
         if (!$result && $update)
         {

@@ -1,2 +1,79 @@
-# awsSecretsManager
-To be updated...
+# bitcot/aws-secrets-manager
+A package to get secret key value pairs from AWS Secrets Manager
+
+### Prerequisites
+- [Setup a secret in AWS](https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_create-basic-secret.html)
+- [Create an AWS access key ID and secret access key](https://aws.amazon.com/premiumsupport/knowledge-center/create-access-key/)
+- [Setting up Credentials for the AWS SDK ](https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_credentials.html)
+
+## Installation
+Installation is super-easy via [Composer](https://getcomposer.org/):
+```bash
+$ composer require bitcot/aws-secrets-manager
+```
+or add it by hand to your `composer.json` file.
+
+## Setup
+1. Setup environment variables in `.env` file in the root of your
+project. [Additional information](https://github.com/vlucas/phpdotenv)
+
+    ```dotenv
+    APP_KEY=<base64_string_preferably_32_characters_long>
+    BSM_AWS_PROFILE=<AWS_credentials_profile>
+    BSM_SECRET_NAME=<AWS_secret_name>
+    BSM_AWS_REGION=<AWS_secret_region>
+    BSM_CACHE_KEY=<secrets_manager_cache_key>
+    BSM_MAX_RETRY_COUNT=<failed_secrets_max_retries>
+    ```
+    - **APP_KEY** [required] base64 string preferably 32 characters long used for encryption [Additional information](https://laravel.com/docs/8.x/encryption#configuration)
+      - If this is 'not set'/'empty string' all the methods in this package will return failed response values (```null``` in case of ```secrets::get($key)```) 
+    - **BSM_AWS_PROFILE** [Default: default] Profile for AWS access key ID and secret access key stored in ~/.aws/credentials
+    - **BSM_SECRET_NAME** [Default: project/env] Name of the secret stored in AWS
+    - **BSM_AWS_REGION** [Default: us-east-2] AWS Region in which the secret is stored
+    - **BSM_CACHE_KEY** [Default: bsmAwsSecrets] Key of the secrets stored in the cache
+    - **BSM_MAX_RETRY_COUNT** [Default: 10] No of failed attempts before marking the key as inactive. This is applicable only if automatic update of values is being used
+2. Include this namespace  to retrieve secrets
+    ```php
+    use Bitcot\AwsSecretsManager\secrets;
+    ```
+
+## Usage
+### Retrieving value using a key
+```php
+secrets::get("key");
+```
+#### Returns
+- Happy: Value of the given key
+- No secret exists for the given key in AWS: null
+
+### Retrieving all the key value pairs
+```php
+secrets::getAll();
+```
+#### Returns
+- Key value pairs object
+  - If no key value pairs exists in AWS an Empty object would be returned
+
+### Clear all the secrets from cache
+```php
+secrets::clearSecrets();
+``` 
+#### Returns
+ ```true``` If the secrets in cache are successfully cleared, ``` false ``` Otherwise.
+
+### Check if the key value pair in the cache matches with the one in AWS
+##### This can be used to set up automatic update of the values in cache if a new value is avaliable in aws
+```php
+secrets::isLatest("key");
+```
+This method clears all the secrets stored in the cache by default if latest value in AWS does not match with the one in cache.
+ To stop this, pass ```false``` as the second argument.
+```php
+secrets::isLatest("key", false);
+```
+
+#### Returns
+```true``` If the value in AWS matches with the one in cache, ``` false ``` Otherwise.
+- Returns ```true``` if the given key doesn't exist in AWS
+
+## To be continued...
