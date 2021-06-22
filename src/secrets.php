@@ -32,7 +32,7 @@ class secrets
             return null;
         }
         $secrets = $secretsManager->fetchSecrets();
-        return property_exists($secrets, $key) ? $secrets->$key->value : null; // todo set null instead of '' while creating new obj in isLatest and make it return null here
+        return property_exists($secrets, $key) ? $secrets->$key->value === ''? null : $secrets->$key->value : null;
     }
 
     /**
@@ -51,6 +51,22 @@ class secrets
         return $secrets;
     }
 
+    /**
+     * @throws Exception
+     */
+    public static function getInfo($key = null)
+    {
+        $secretsManager = new secrets();
+        if ($secretsManager->noService()){
+            return 'service is down';
+        }
+        $secrets = $secretsManager->fetchSecrets();
+        if ($key != null){
+            return property_exists($secrets, $key) ? $secrets->$key : null;
+        }
+        return $secrets;
+    }
+
     public static function clearSecrets(): bool
     {
         $secretsManager = new secrets();
@@ -64,7 +80,7 @@ class secrets
     /**
      * @throws Exception
      */
-    public static function isLatest($key, $update = true): bool // todo test no key in awsSM retry count scenario
+    public static function isLatest($key, $update = true): bool
     {
         $secretsManager = new secrets();
         if ($secretsManager->noService()){
@@ -115,7 +131,7 @@ class secrets
             return false;
         }
         $secrets = Cache::get($secretsManager->cacheKey);
-        if ($secrets->$key->retryCount != 0){
+        if (property_exists($secrets, $key) && $secrets->$key->retryCount != 0){
             $secrets->$key->retryCount = 0;
             $secrets->$key->status = 'active';
         }
@@ -165,23 +181,6 @@ class secrets
     /**
      * @throws Exception
      */
-    public static function storedInfo($key = null)
-    {
-        $secretsManager = new secrets();
-        if ($secretsManager->noService()){
-            return 'service is down';
-        }
-        $secrets = $secretsManager->fetchSecrets();
-        if ($key != null){
-            return property_exists($secrets, $key) ? $secrets->$key : null;
-        }
-        return $secrets;
-    }
-
-
-    /**
-     * @throws Exception
-     */
     private function decryptSecrets($secrets)
     {
         foreach ($secrets as $key=>$value){
@@ -219,11 +218,11 @@ class secrets
         // Create a Secrets Manager Client
         $client = new SecretsManagerClient([
             'profile' => Env::get('BSM_AWS_PROFILE', 'bsmAwsSecrets'),
-            'version' => 'latest',
+            'version' => 'latest', // todo ask chetan about this and include in env if needed
             'region' =>  Env::get('BSM_AWS_REGION', 'us-east-2'),
         ]);
 
-        $secretName = Env::get('BSM_SECRET_NAME', 'test/local');
+        $secretName = Env::get('BSM_SECRET_NAME', 'project/env');
 
         try {
             $result = $client->getSecretValue([

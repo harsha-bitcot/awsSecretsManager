@@ -43,8 +43,9 @@ project. [Additional information](https://github.com/vlucas/phpdotenv)
 secrets::get("key");
 ```
 #### Returns
-- Happy: Value of the given key
-- No secret exists for the given key in AWS: null
+- Value of the given key
+    - ```null``` If the secret is an empty string
+   - ```null``` If no secret exists for the given key in AWS
 
 ### Retrieving all the key value pairs
 ```php
@@ -52,7 +53,19 @@ secrets::getAll();
 ```
 #### Returns
 - Key value pairs object
-  - If no key value pairs exists in AWS an Empty object would be returned
+  - If no key value pairs exists in AWS, an Empty object would be returned
+
+### Get All the info of secrets
+```php
+secrets::getInfo();
+```
+#### To get the values of only one key value pair, Pass the key while calling this method
+```php
+secrets::getInfo('key');
+```
+#### Returns
+An object containing the value, retry count and status of every key stored in the cache
+- ```null``` If the key is passed while calling the method and no secret exists with that key.
 
 ### Clear all the secrets from cache
 ```php
@@ -75,5 +88,20 @@ secrets::isLatest("key", false);
 #### Returns
 ```true``` If the value in AWS matches with the one in cache, ``` false ``` Otherwise.
 - Returns ```true``` if the given key doesn't exist in AWS
+
+### Mark a secret key value pair as working
+#### This should be clubbed with ```isLatest()``` to achieve automatic update of the values in cache if a new value is available in aws
+```php
+secrets::markAsWorking('key');
+```
+#### Returns
+```true``` If the key value pair has been marked as working and set retry count to 0, ``` false ``` Otherwise.
+
+### Get status of the secrets
+```php
+secrets::status();
+```
+#### Returns
+An object containing arrays of Total, active, failing, failed and unknown keys.
 
 ## To be continued...
