@@ -1,6 +1,6 @@
 {
     "name": "bitcot/aws-secrets-manager",
-    "description": "a package to get values fro",
+    "description": "AWS Secrets Manager implementation with saving the encrypted values in cache",
     "type": "library",
     "require": {
         "illuminate/encryption": "^8.47",

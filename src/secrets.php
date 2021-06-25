@@ -218,7 +218,7 @@ class secrets
         // Create a Secrets Manager Client
         $client = new SecretsManagerClient([
             'profile' => Env::get('BSM_AWS_PROFILE', 'default'),
-            'version' => 'latest', // todo ask chetan about this and include in env if needed
+            'version' => 'latest',
             'region' =>  Env::get('BSM_AWS_REGION', 'us-east-2'),
         ]);
 
