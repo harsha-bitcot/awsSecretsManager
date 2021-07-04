@@ -23,28 +23,31 @@ class secrets
         $this->cacheKey = Env::get('BSM_CACHE_KEY', 'bsmAwsSecrets');
     }
 
-    /**
-     * @throws Exception
-     */
-    public static function get($key){
+    public static function get($key, $defaultValue = null){
         $secretsManager = new secrets();
         if ($secretsManager->noService()){
-            return null;
+            return $defaultValue;
         }
-        $secrets = $secretsManager->fetchSecrets();
-        return property_exists($secrets, $key) ? $secrets->$key->value === ''? null : $secrets->$key->value : null;
+
+        try {
+            $secrets = $secretsManager->fetchSecrets();
+        } catch(Exception $e) {
+            return $defaultValue;
+        }
+        return property_exists($secrets, $key) ? $secrets->$key->value === ''? $defaultValue : $secrets->$key->value : $defaultValue;
     }
 
-    /**
-     * @throws Exception
-     */
     public static function getAll()
     {
         $secretsManager = new secrets();
         if ($secretsManager->noService()){
             return new stdClass();
         }
-        $secrets = $secretsManager->fetchSecrets();
+        try {
+            $secrets = $secretsManager->fetchSecrets();
+        } catch(Exception $e) {
+            return new stdClass();
+        }
         foreach ($secrets as $key=>$value){
             $secrets->$key = $value->value;
         }
@@ -60,7 +63,11 @@ class secrets
         if ($secretsManager->noService()){
             return 'service is down';
         }
-        $secrets = $secretsManager->fetchSecrets();
+        try {
+            $secrets = $secretsManager->fetchSecrets();
+        } catch(Exception $e) {
+            return 'service is down because of some error';
+        }
         if ($key != null){
             return property_exists($secrets, $key) ? $secrets->$key : null;
         }
@@ -86,7 +93,11 @@ class secrets
         if ($secretsManager->noService()){
             return false;
         }
-        $secrets = $secretsManager->fetchSecrets();
+        try {
+            $secrets = $secretsManager->fetchSecrets();
+        } catch(Exception $e) {
+            return false;
+        }
         if (!property_exists($secrets, $key)){
             $secrets->$key = new stdClass();
             $secrets->$key->value = '';
@@ -142,13 +153,17 @@ class secrets
     /**
      * @throws Exception
      */
-    public static function status(): stdClass
+    public static function status()
     {
         $secretsManager = new secrets();
         if ($secretsManager->noService()){
             return 'service is down';
         }
-        $secrets = $secretsManager->fetchSecrets();
+        try {
+            $secrets = $secretsManager->fetchSecrets();
+        } catch(Exception $e) {
+            return 'service is down because of some error';
+        }
         $activeSecrets = array();
         $failingSecrets = array();
         $failedSecrets = array();
