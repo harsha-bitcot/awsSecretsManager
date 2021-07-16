@@ -34,7 +34,11 @@ class secrets
         } catch(Exception $e) {
             return $defaultValue;
         }
-        return property_exists($secrets, $key) ? $secrets->$key->value === ''? $defaultValue : $secrets->$key->value : $defaultValue;
+//        return property_exists($secrets, $key) ? $secrets->$key->value === ''? $defaultValue : $secrets->$key->value : $defaultValue;
+        if (property_exists($secrets, $key) && $secrets->$key->value != ''){
+            return $secrets->$key->value;
+        }
+        return $defaultValue;
     }
 
     public static function getAll()
