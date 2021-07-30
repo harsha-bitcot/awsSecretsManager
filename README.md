@@ -5,7 +5,7 @@ A library to get secret key value pairs from AWS Secrets Manager
 This library encrypts the retrieved values and stores it in the cache indefinitely. Getting the latest key value pairs from AWS and updating them in the cache can be achieved with any one of the following methods:
 
 - Clear the cache by calling [```secrets::clearSecrets();```](#clear-all-the-secrets-from-cache)
-    - Laravel implementation example
+    - [Laravel implementation example](#clear-secrets-laravel)
 - Setup Automatic update from AWS at runtime by adding [```secrets::isLatest('key');```](#check-if-the-key-value-pair-in-the-cache-matches-with-the-one-in-aws) and [```secrets::markAsWorking('key');```](#mark-a-secret-key-value-pair-as-working) in a try-catch block where the secret is used
     - [Implementation approximation](#implementation-approximation)
 - [Laravel specific] Use the Artisan command ```php artisan cache:clear```
@@ -162,7 +162,7 @@ echo secrets::get('key');
 ```
 ##### Update values from AWS
 - Clear the cache by calling [```secrets::clearSecrets();```](#clear-all-the-secrets-from-cache)
-    - Laravel implementation example
+    - [Laravel implementation example](#clear-secrets-laravel)
 - [Laravel specific] Use the Artisan command ```php artisan cache:clear```
 
 ### <a name="implementation-approximation"></a> Automatic update of the values in cache if a new value is available in AWS[Approximation]
@@ -173,7 +173,34 @@ use Bitcot\AwsSecretsManager\secrets;
 ```
 To retrieve the latest values
 ```php
-To be updated...
+function apiCallSimulation($secondTry = false){
+    echo secrets::get('key');
+    //call the API
+    if ('API call failed dude to wrong/invalid secret'){
+        if (!secrets::isLatest('key') && !$secondTry){
+            return apiCallSimulation(true);
+        }
+    }
+    if ('API call is successful'){
+        secrets::markAsWorking('key');
+    }
+}
 ```
+
+### <a name="clear-secrets-laravel"></a>Clear secrets - Laravel example
+create a custom artisan command, Include the namespace at the top and use this code in handle method
+```php
+public function handle(secrets $secrets)
+{
+    $success = $secrets->clearSecrets();
+    if ($success){
+        $this->info('The command was successful!');
+    }else {
+        $this->error('Something went wrong!');
+    }
+    return 0;
+}
+```
+
 
 ## To be continued...

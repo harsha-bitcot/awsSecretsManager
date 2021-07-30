@@ -149,8 +149,8 @@ class secrets
         if (property_exists($secrets, $key) && $secrets->$key->retryCount != 0){
             $secrets->$key->retryCount = 0;
             $secrets->$key->status = 'active';
+            Cache::put($secretsManager->cacheKey, $secrets);
         }
-        Cache::put($secretsManager->cacheKey, $secrets);
         return true;
     }
 
