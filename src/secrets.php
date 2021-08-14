@@ -2,6 +2,7 @@
 
 namespace Bitcot\AwsSecretsManager;
 
+use Aws\Credentials\CredentialProvider;
 use Exception;
 use Aws\SecretsManager\SecretsManagerClient;
 use Aws\Exception\AwsException;
@@ -235,11 +236,23 @@ class secrets
     private function fetchSecretsFromAWS()
     {
         // Create a Secrets Manager Client
-        $client = new SecretsManagerClient([
-            'profile' => Env::get('BSM_AWS_PROFILE', 'default'),
-            'version' => 'latest',
-            'region' =>  Env::get('BSM_AWS_REGION', 'us-east-2'),
-        ]);
+        if(Env::get('BSM_AWS_CREDENTIALS') === true){
+            $profile = Env::get('BSM_CREDENTIALS_PROFILE');
+            $path = Env::get('BSM_CREDENTIALS_PATH');
+            $provider = CredentialProvider::ini($profile, $path);
+            $provider = CredentialProvider::memoize($provider);
+            $client = new SecretsManagerClient([
+                'version' => 'latest',
+                'region' =>  Env::get('BSM_AWS_REGION', 'us-east-2'),
+                'credentials' => $provider,
+            ]);
+        }else{
+            $client = new SecretsManagerClient([
+                'profile' => Env::get('BSM_AWS_PROFILE', 'default'),
+                'version' => 'latest',
+                'region' =>  Env::get('BSM_AWS_REGION', 'us-east-2'),
+            ]);
+        }
 
         $secretName = Env::get('BSM_SECRET_NAME', 'project/env');
 
