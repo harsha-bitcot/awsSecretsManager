@@ -71,7 +71,8 @@ class secrets
         try {
             $secrets = $secretsManager->fetchSecrets();
         } catch(Exception $e) {
-            return 'service is down because of some error';
+            return $e;
+//            return 'service is down because of some error';
         }
         if ($key != null){
             return property_exists($secrets, $key) ? $secrets->$key : null;
